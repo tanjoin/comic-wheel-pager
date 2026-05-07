@@ -1,0 +1,177 @@
+type ContentWindow = Window & {
+    _myOriginalScriptBookmarklet?: boolean;
+    _viewerWheelHandlerInstalled?: boolean;
+};
+
+const SELECTOR_SECTION = "section";
+const SELECTOR_SPLIDE_LIST = ".splide__list";
+const SELECTOR_XCV_MAIN = "#xCVHMain";
+
+const COMIC_WALKER_CLICK_X_FORWARD = 3671;
+const COMIC_WALKER_CLICK_X_BACK = 5;
+
+class Content {
+    private readonly windowState: ContentWindow;
+    private readonly hostname: string;
+    private domains: string[] = [];
+    private lastWheelTime = 0;
+    private static readonly WHEEL_DEBOUNCE_TIME = 150;
+
+    constructor() {
+        this.windowState = window as ContentWindow;
+        this.hostname = location.hostname;
+    }
+
+    async load() {
+        if (this.windowState._myOriginalScriptBookmarklet) {
+            return;
+        }
+        this.windowState._myOriginalScriptBookmarklet = true;
+
+        const data = await chrome.storage.local.get('domains');
+        this.domains = this.normalizeDomains(data.domains as string[] | undefined);
+
+        if (!this.isAllowedByDomain()) {
+            return;
+        }
+
+        this.apply();
+    }
+
+    private apply() {
+        if (this.isPageNavHost()) {
+            this.installSectionWheelHandler(".page-navigation-forward", ".page-navigation-backward");
+            return;
+        }
+
+        if (this.isComicWalkerHost()) {
+            this.installComicWalkerWheelHandler();
+            return;
+        }
+
+        if (this.isPocketMagazineHost()) {
+            this.installSectionWheelHandler(".c-viewer__pager-next", ".c-viewer__pager-prev");
+            return;
+        }
+
+        if (this.isXcvHost()) {
+            this.installElementWheelHandler(SELECTOR_XCV_MAIN, "#xCVLeftNav", "#xCVRightNav");
+        }
+    }
+
+    private normalizeDomains(domains: string[] | undefined): string[] {
+        return (domains || [])
+            .map((domain) => domain.trim())
+            .filter((domain) => domain.length > 0);
+    }
+
+    private isAllowedByDomain(): boolean {
+        return this.domains.some((domain) => this.hostname.includes(domain));
+    }
+
+    private isPageNavHost(): boolean {
+        return ["comic-gardo.com", "comic-action.com", "comic-earthstar.com", "shonenjumpplus.com"].some(
+            (host) => this.hostname.includes(host),
+        );
+    }
+
+    private isComicWalkerHost(): boolean {
+        return this.hostname.includes("comic-walker.com");
+    }
+
+    private isPocketMagazineHost(): boolean {
+        return this.hostname.includes("pocket.shonenmagazine.com");
+    }
+
+    private isXcvHost(): boolean {
+        return ["youngchampion.jp", "championcross.jp", "comic-medu.com"].some((host) =>
+            this.hostname.includes(host),
+        );
+    }
+
+    private installSectionWheelHandler(nextSelector: string, prevSelector: string) {
+        this.installElementWheelHandler(SELECTOR_SECTION, nextSelector, prevSelector);
+    }
+
+    private installElementWheelHandler(elementSelector: string, nextSelector: string, prevSelector: string) {
+        [...document.querySelectorAll(elementSelector)].forEach((element) => {
+            element.addEventListener(
+                "mousewheel",
+                (event: Event) => {
+                    const wheelEvent = event as WheelEvent;
+                    event.preventDefault();
+                    if (wheelEvent.deltaY > 0) {
+                        document.querySelector<HTMLElement>(nextSelector)?.click();
+                    } else if (wheelEvent.deltaY < 0) {
+                        document.querySelector<HTMLElement>(prevSelector)?.click();
+                    }
+                },
+                { passive: false },
+            );
+        });
+    }
+
+    private installComicWalkerWheelHandler() {
+        if (this.windowState._viewerWheelHandlerInstalled) {
+            return;
+        }
+        this.windowState._viewerWheelHandlerInstalled = true;
+
+        const viewerTargetElement = document.querySelector(SELECTOR_SPLIDE_LIST);
+        if (!viewerTargetElement) {
+            return;
+        }
+
+        document.body.addEventListener("wheel", (event) => this.handleComicWalkerWheel(event), {
+            passive: false,
+            capture: true,
+        });
+    }
+
+    private handleComicWalkerWheel(event: WheelEvent) {
+        const now = Date.now();
+        if (now - this.lastWheelTime < Content.WHEEL_DEBOUNCE_TIME) {
+            event.preventDefault();
+            return;
+        }
+        this.lastWheelTime = now;
+
+        const currentViewerTargetElement = document.querySelector(SELECTOR_SPLIDE_LIST);
+        if (!currentViewerTargetElement) {
+            event.preventDefault();
+            return;
+        }
+
+        const rect = currentViewerTargetElement.getBoundingClientRect();
+        const clickYMiddle = rect.top + rect.height / 2;
+        const delta = Math.sign(event.deltaY);
+
+        if (delta < 0) {
+            event.preventDefault();
+            this.dispatchClickEvent(currentViewerTargetElement, COMIC_WALKER_CLICK_X_FORWARD, clickYMiddle);
+        } else if (delta > 0) {
+            event.preventDefault();
+            this.dispatchClickEvent(currentViewerTargetElement, COMIC_WALKER_CLICK_X_BACK, clickYMiddle);
+        }
+    }
+
+    private dispatchClickEvent(targetElement: Element, clientX: number, clientY: number) {
+        const clickEvent = new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            button: 0,
+            buttons: 1,
+            clientX,
+            clientY,
+            screenX: clientX,
+            screenY: clientY,
+        });
+        targetElement.dispatchEvent(clickEvent);
+    }
+}
+
+window.onload = async () => {
+    const content = new Content();
+    await content.load();
+};

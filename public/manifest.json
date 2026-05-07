@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Comic Wheel Pager",
+  "description": "Enhances comic reading experience with wheel navigation.",
+  "version": "2026.5.8",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "128": "img/128.png",
+    "48": "img/48.png",
+    "16": "img/16.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "assets/background.js"
+  },
+  "action": {
+    "default_icon": "img/icon.png"
+  },
+  "options_page": "src/options.html"
+}

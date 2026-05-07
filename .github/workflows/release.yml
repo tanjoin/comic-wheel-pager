@@ -7,14 +7,24 @@ on:
 
 jobs:
   release:
-    run-on: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup Node
+        uses: actions/setup-node@v6
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: |
+          npm run build
+
       - name: Zip
         run: |
-          zip -r build.zip src
+          zip -r build.zip app
 
       - name: Create Release
         id: create_release
