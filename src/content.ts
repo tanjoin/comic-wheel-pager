@@ -1,6 +1,7 @@
 type ContentWindow = Window & {
     _myOriginalScriptBookmarklet?: boolean;
     _viewerWheelHandlerInstalled?: boolean;
+    _comicFuzWheelHandlerInstalled?: boolean;
 };
 
 const SELECTOR_SECTION = "section";
@@ -39,6 +40,11 @@ class Content {
     }
 
     private apply() {
+        if (this.isComicFuzHost()) {
+            this.installComicFuzWheelHandler();
+            return;
+        }
+
         if (this.isPageNavHost()) {
             this.installSectionWheelHandler(".page-navigation-forward", ".page-navigation-backward");
             return;
@@ -73,6 +79,10 @@ class Content {
         return ["comic-gardo.com", "comic-action.com", "comic-earthstar.com", "shonenjumpplus.com"].some(
             (host) => this.hostname.includes(host),
         );
+    }
+
+    private isComicFuzHost(): boolean {
+        return this.hostname.includes("comic-fuz.com") && location.pathname.includes("/manga/viewer/");
     }
 
     private isComicWalkerHost(): boolean {
@@ -128,6 +138,36 @@ class Content {
         });
     }
 
+    private installComicFuzWheelHandler() {
+        if (this.windowState._comicFuzWheelHandlerInstalled) {
+            return;
+        }
+        this.windowState._comicFuzWheelHandlerInstalled = true;
+
+        document.addEventListener("wheel", (event) => this.handleComicFuzWheel(event), {
+            passive: false,
+            capture: true,
+        });
+    }
+
+    private handleComicFuzWheel(event: WheelEvent) {
+        const now = Date.now();
+        if (now - this.lastWheelTime < Content.WHEEL_DEBOUNCE_TIME) {
+            event.preventDefault();
+            return;
+        }
+
+        if (event.deltaY === 0) {
+            return;
+        }
+
+        this.lastWheelTime = now;
+        event.preventDefault();
+
+        const key = event.deltaY > 0 ? "ArrowLeft" : "ArrowRight";
+        this.dispatchArrowKey(key);
+    }
+
     private handleComicWalkerWheel(event: WheelEvent) {
         const now = Date.now();
         if (now - this.lastWheelTime < Content.WHEEL_DEBOUNCE_TIME) {
@@ -168,6 +208,17 @@ class Content {
             screenY: clientY,
         });
         targetElement.dispatchEvent(clickEvent);
+    }
+
+    private dispatchArrowKey(key: "ArrowLeft" | "ArrowRight") {
+        const keyboardEventInit: KeyboardEventInit = {
+            key,
+            code: key,
+            bubbles: true,
+            cancelable: true,
+        };
+        document.dispatchEvent(new KeyboardEvent("keydown", keyboardEventInit));
+        document.dispatchEvent(new KeyboardEvent("keyup", keyboardEventInit));
     }
 }
 

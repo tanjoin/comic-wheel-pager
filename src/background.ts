@@ -1,4 +1,5 @@
 const DEFAULT_DOMAINS: string[] = [
+    'comic-fuz.com',
     'comic-gardo.com',
     'comic-action.com',
     'comic-earthstar.com',
