@@ -15,6 +15,7 @@ class Content {
     private readonly windowState: ContentWindow;
     private readonly hostname: string;
     private domains: string[] = [];
+    private invertWheel = false;
     private lastWheelTime = 0;
     private static readonly WHEEL_DEBOUNCE_TIME = 150;
 
@@ -29,8 +30,9 @@ class Content {
         }
         this.windowState._myOriginalScriptBookmarklet = true;
 
-        const data = await chrome.storage.local.get('domains');
+        const data = await chrome.storage.local.get(['domains', 'invertWheel']);
         this.domains = this.normalizeDomains(data.domains as string[] | undefined);
+        this.invertWheel = Boolean(data.invertWheel);
 
         if (!this.isAllowedByDomain()) {
             return;
@@ -109,10 +111,11 @@ class Content {
                 "mousewheel",
                 (event: Event) => {
                     const wheelEvent = event as WheelEvent;
+                    const deltaY = this.normalizeWheelDelta(wheelEvent.deltaY);
                     event.preventDefault();
-                    if (wheelEvent.deltaY > 0) {
+                    if (deltaY > 0) {
                         document.querySelector<HTMLElement>(nextSelector)?.click();
-                    } else if (wheelEvent.deltaY < 0) {
+                    } else if (deltaY < 0) {
                         document.querySelector<HTMLElement>(prevSelector)?.click();
                     }
                 },
@@ -164,7 +167,8 @@ class Content {
         this.lastWheelTime = now;
         event.preventDefault();
 
-        const key = event.deltaY > 0 ? "ArrowLeft" : "ArrowRight";
+        const deltaY = this.normalizeWheelDelta(event.deltaY);
+        const key = deltaY > 0 ? "ArrowLeft" : "ArrowRight";
         this.dispatchArrowKey(key);
     }
 
@@ -184,7 +188,7 @@ class Content {
 
         const rect = currentViewerTargetElement.getBoundingClientRect();
         const clickYMiddle = rect.top + rect.height / 2;
-        const delta = Math.sign(event.deltaY);
+        const delta = Math.sign(this.normalizeWheelDelta(event.deltaY));
 
         if (delta < 0) {
             event.preventDefault();
@@ -219,6 +223,10 @@ class Content {
         };
         document.dispatchEvent(new KeyboardEvent("keydown", keyboardEventInit));
         document.dispatchEvent(new KeyboardEvent("keyup", keyboardEventInit));
+    }
+
+    private normalizeWheelDelta(deltaY: number): number {
+        return this.invertWheel ? -deltaY : deltaY;
     }
 }
 

@@ -1,7 +1,27 @@
 # comic-wheel-pager
 
-漫画サイトのページャーをホイールで操作できるようにするブラウザ拡張機能です。これにより、漫画を読む際の操作性が向上し、より快適な読書体験を提供します。
+漫画サイトのページャーをホイールで操作できるようにするブラウザ拡張機能です。
+
+## 対応サイト
+
+- championcross.jp
+- comic-action.com
+- comic-earthstar.com
+- comic-fuz.com
+- comic-gardo.com
+- comic-medu.com
+- comic-walker.com
+- pocket.shonenmagazine.com
+- shonenjumpplus.com
+- youngchampion.jp
 
 ## CHANGELOG
+
+### 2026-05-10
+- オプション画面に「ホイールの上下方向を逆にする」 設定を追加しました。
+
+### 2026-05-09
+- comic-fuz.com をサポートするようにしました。
+
 ### 2026-05-08
 - 漫画サイトのページャーをホイールで操作できるようにするブラウザ拡張機能をリリースしました。

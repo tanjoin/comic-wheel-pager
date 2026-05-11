@@ -1,10 +1,13 @@
 class Options {
 
     private _textArea: HTMLTextAreaElement | null;
+    private _invertWheel: HTMLInputElement | null;
 
     constructor() {
         this._textArea = document.getElementById('domains') as (HTMLTextAreaElement | null);
+        this._invertWheel = document.getElementById('invertWheel') as (HTMLInputElement | null);
         this._textArea?.addEventListener('change', this.save.bind(this));
+        this._invertWheel?.addEventListener('change', this.save.bind(this));
     }
 
     async save() {
@@ -13,19 +16,21 @@ class Options {
             .split('\n')
             .map((domain) => domain.trim())
             .filter((domain) => domain.length > 0);
-        await chrome.storage.local.set({ 'domains': domains });
+        const invertWheel = this._invertWheel?.checked || false;
+        await chrome.storage.local.set({ domains, invertWheel });
     }
 
     async load() {
-        const data = await chrome.storage.local.get('domains');
-        this.render(Array.isArray(data.domains) ? data.domains : []);
+        const data = await chrome.storage.local.get(['domains', 'invertWheel']);
+        this.render(Array.isArray(data.domains) ? data.domains : [], Boolean(data.invertWheel));
     }
 
-    async render(array: string[]) {
-        if (!this._textArea) {
+    async render(array: string[], invertWheel: boolean) {
+        if (!this._textArea || !this._invertWheel) {
             return;
         }
         this._textArea.value = array?.join('\n') || '';
+        this._invertWheel.checked = invertWheel;
     }
 };
 
