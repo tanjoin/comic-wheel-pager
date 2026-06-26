@@ -105,8 +105,20 @@ class Content {
         this.installElementWheelHandler(SELECTOR_SECTION, nextSelector, prevSelector);
     }
 
-    private installElementWheelHandler(elementSelector: string, nextSelector: string, prevSelector: string) {
-        [...document.querySelectorAll(elementSelector)].forEach((element) => {
+    private async installElementWheelHandler(elementSelector: string, nextSelector: string, prevSelector: string) {
+        let elements = document.querySelectorAll(elementSelector);
+        // 要素が取得できなかったら何回か時間を空けてリトライする
+        let retryCount = 0;
+        const maxRetries = 5;
+        const retryInterval = 1000; // 1秒
+        while (elements.length === 0 && retryCount < maxRetries) {
+            console.log(`Waiting for elements to appear: ${elementSelector}, retry ${retryCount + 1}/${maxRetries}`);
+            await new Promise((resolve) => setTimeout(resolve, retryInterval));
+            elements = document.querySelectorAll(elementSelector);
+            retryCount++;
+        }
+
+        elements.forEach((element) => {
             element.addEventListener(
                 "mousewheel",
                 (event: Event) => {
@@ -124,13 +136,25 @@ class Content {
         });
     }
 
-    private installComicWalkerWheelHandler() {
+    private async installComicWalkerWheelHandler() {
         if (this.windowState._viewerWheelHandlerInstalled) {
             return;
         }
         this.windowState._viewerWheelHandlerInstalled = true;
 
-        const viewerTargetElement = document.querySelector(SELECTOR_SPLIDE_LIST);
+        let viewerTargetElement = document.querySelector(SELECTOR_SPLIDE_LIST);
+
+        // 要素が取得できなかったら何回か時間を空けてリトライする
+        let retryCount = 0;
+        const maxRetries = 5;
+        const retryInterval = 1000; // 1秒
+        while (!viewerTargetElement && retryCount < maxRetries) {
+            console.log(`Waiting for viewer target element to appear, retry ${retryCount + 1}/${maxRetries}`);
+            await new Promise((resolve) => setTimeout(resolve, retryInterval));
+            viewerTargetElement = document.querySelector(SELECTOR_SPLIDE_LIST);
+            retryCount++;
+        }
+
         if (!viewerTargetElement) {
             return;
         }
