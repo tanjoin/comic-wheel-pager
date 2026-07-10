@@ -96,7 +96,7 @@ class Content {
     }
 
     private isXcvHost(): boolean {
-        return ["youngchampion.jp", "championcross.jp", "comic-medu.com"].some((host) =>
+        return ["youngchampion.jp", "championcross.jp", "comic-medu.com", "g-comi.jp"].some((host) =>
             this.hostname.includes(host),
         );
     }

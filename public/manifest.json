@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Comic Wheel Pager",
   "description": "Enhances comic reading experience with wheel navigation.",
-  "version": "2026.06.26",
+  "version": "2026.07.10",
   "permissions": [
     "tabs",
     "activeTab",

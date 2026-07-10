@@ -14,8 +14,12 @@
 - pocket.shonenmagazine.com
 - shonenjumpplus.com
 - youngchampion.jp
+- g-comi.jp
 
 ## CHANGELOG
+
+### 2026-07-10
+- g-comi.jp をサポートするようにしました。
 
 ### 2026-05-10
 - オプション画面に「ホイールの上下方向を逆にする」 設定を追加しました。

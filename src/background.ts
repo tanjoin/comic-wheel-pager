@@ -9,6 +9,7 @@ const DEFAULT_DOMAINS: string[] = [
     'youngchampion.jp',
     'championcross.jp',
     'comic-medu.com',
+    'g-comi.jp',
 ];
 
 class Background {
